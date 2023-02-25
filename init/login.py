@@ -10,6 +10,16 @@ from inter.LoginAysnSuggest import loginAysnSuggest
 from inter.LoginConf import loginConf
 from myException.UserPasswordException import UserPasswordException
 
+from selenium import webdriver
+from selenium.webdriver import ChromeOptions
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.by import By
+
+# 去除浏览器识别
+option = ChromeOptions()
+option.add_experimental_option('excludeSwitches', ['enable-automation'])
+option.add_argument('--disable-blink-features=AutomationControlled')
+
 
 class GoLogin:
     def __init__(self, session, is_auto_code, auto_code_type):
@@ -117,19 +127,57 @@ class GoLogin:
         login_num = 0
         while True:
             if loginConf(self.session):
+                # result = getPassCodeNewOrderAndLogin1(session=self.session, imgType="login")
+                # if not result:
+                #     continue
+                # self.randCode = getRandCode(self.is_auto_code, self.auto_code_type, result)
+                # print(self.randCode)
+                # login_num += 1
+                # self.auth()
+                # if self.codeCheck():
+                #     uamtk = self.baseLogin(user, passwd)
+                #     if uamtk:
+                #         self.getUserName(uamtk)
+                #         break
+                driver = webdriver.Chrome(
+                    "C:\\Users\\22950\\.cache\\selenium\\chromedriver\\win32\\110.0.5481.77\\chromedriver.exe",
+                    options=option)
+                driver.implicitly_wait(10)
+                driver.maximize_window()
+                driver.get("https://kyfw.12306.cn/otn/resources/login.html")
 
-                result = getPassCodeNewOrderAndLogin1(session=self.session, imgType="login")
-                if not result:
+                driver.find_element(By.XPATH,
+                                    '//*[@id="J-userName"]').send_keys(user)
+                driver.find_element(By.XPATH,
+                                    '//*[@id="J-password"]').send_keys(passwd)
+                driver.find_element(By.XPATH,
+                                    '//*[@id="J-login"]').click()
+
+
+                # 找滑块
+                ele = driver.find_element(By.XPATH, '//*[@id="nc_1_n1z"]')
+
+                # 使用action操作鼠标
+                action = ActionChains(driver)
+                # 鼠标移动到元素
+                action.move_to_element(ele)
+                # 按住鼠标
+                action.click_and_hold(ele)
+                # 拖动300个水平像素
+                action.move_by_offset(300,0)
+                # 放开鼠标
+                action.release()
+                # 一定要让上面的操作执行
+                action.perform()
+
+                time.sleep(3)
+
+                if driver.get_cookie(name='tk'):
+                    result = driver.get_cookie(name='tk')["value"]
+                    self.getUserName(result)
+                    break
+                else:
                     continue
-                self.randCode = getRandCode(self.is_auto_code, self.auto_code_type, result)
-                print(self.randCode)
-                login_num += 1
-                self.auth()
-                if self.codeCheck():
-                    uamtk = self.baseLogin(user, passwd)
-                    if uamtk:
-                        self.getUserName(uamtk)
-                        break
             else:
                 loginAysnSuggest(self.session, username=user, password=passwd)
                 login_num += 1
